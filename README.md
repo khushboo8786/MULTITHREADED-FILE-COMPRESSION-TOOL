@@ -10,58 +10,61 @@
 
 *MENTOR*:NEELA SANTHOSH KUMAR
 
-**A Multithreaded File Compression Tool is an essential software component in modern computing environments where speed and efficiency are critical. By dividing the file into chunks and using multiple threads to compress them in parallel, the tool takes full advantage of modern CPU architectures. It not only saves time but also improves system performance and user productivity. Whether you’re building backup utilities, data transfer applications, or embedded systems, mastering multithreaded file compression is a valuable skill that combines core concepts of algorithms, concurrency, and system programming.
+**This C++ program implements a simple and efficient multithreaded file compression and decompression tool based on the Run-Length Encoding (RLE) algorithm. The primary objective of the code is to handle large files by breaking them into manageable chunks, compress or decompress them concurrently using multiple threads, and finally write the processed data to an output file. The design leverages modern C++ features such as the Standard Template Library (STL), threading (<thread>), and synchronization mechanisms (<mutex>), ensuring both scalability and performance.
 
-In today’s data-driven world, the volume of digital information is increasing rapidly. Efficient storage and faster processing have become vital in systems that handle large files. File compression is one of the most effective techniques to reduce file sizes and optimize storage. However, as file sizes grow larger and system architectures become more parallel (multi-core processors), it becomes important to accelerate the compression process. A Multithreaded File Compression Tool is a powerful solution that leverages parallel processing to compress files faster by distributing the workload across multiple threads.
+Core Components and Functionality
+1. Constants and Global Variables
+CHUNK_SIZE: Defined as 1 MB (1024 * 1024 bytes), this constant determines the size of data read and processed in each chunk. It allows the program to handle large files in smaller segments to efficiently utilize system memory.
 
-A multithreaded file compression tool is a software program designed to reduce the size of files by encoding their contents in a more efficient format—using multiple threads running concurrently. Unlike a single-threaded compression utility that processes data sequentially, a multithreaded tool splits the input file into smaller blocks (chunks) and processes each chunk independently and simultaneously using different CPU cores. This results in significantly reduced processing time, especially for large files.
+io_mutex: A global mutex used to synchronize console output across multiple threads, preventing interleaved or garbled logging.
 
-The working of a multithreaded file compression tool typically involves the following steps:
+2. Run-Length Encoding (RLE) Implementation
+compress_rle(const std::string& data):
+This function performs RLE compression on a given input string. It iterates through the string, counts consecutive occurrences of each character (up to 255), and appends the character followed by its count as a single unit in the compressed string. For example, the input "aaaabb" would become "a\x04b\x02".
 
-File Splitting (Chunking):
+decompress_rle(const std::string& data):
+This function performs the reverse operation of compress_rle. It reads each character and the following byte (representing the count) and reconstructs the original string by repeating the character according to the count.
 
-The input file is divided into fixed-size chunks (e.g., 1 MB each).
+3. Threaded Chunk Processing
+compress_chunk and decompress_chunk:
+These are thread functions responsible for processing individual data chunks. Each function takes the input chunk, applies the respective RLE algorithm, stores the result in a shared results vector, and logs the completion status using a thread-safe lock (std::lock_guard with io_mutex).
 
-This allows parallel processing where each chunk can be handled independently.
+4. File Processing Workflow
+process_file(const std::string& filename, bool compressing):
+This function is the heart of the program’s file I/O and multithreading logic. Its workflow includes:
 
-Thread Allocation:
+Opening Input File: The input file is opened in binary mode for reading.
 
-Each chunk is assigned to a separate thread.
+Chunking: Data is read in blocks of 1 MB and stored in a chunks vector. The actual bytes read are resized to fit the buffer to avoid trailing null bytes.
 
-The thread compresses its assigned chunk using a specified compression algorithm.
+Launching Threads: For each chunk, a thread is created to either compress or decompress the data, depending on the compressing flag.
 
-Compression Algorithm:
+Joining Threads: All threads are joined to ensure completion before moving to the next stage.
 
-A simple method like Run-Length Encoding (RLE) or more advanced algorithms like Huffman Coding, LZW, or LZ77 can be used.
+Writing Output File: The processed chunks are written sequentially into either "compressed.rle" or "decompressed.txt", depending on the operation mode.
 
-For instance, RLE compresses consecutive repeated characters by storing the character and its count.
+5. Entry Point: main() Function
+The main() function serves as the command-line interface. It expects two arguments:
 
-Synchronization:
+Operation mode: "compress" or "decompress"
 
-Threads may need to synchronize when accessing shared resources (like console output or final file writing) using a mutex (mutual exclusion lock).
+Input file name
 
-Combining Results:
+Based on the operation mode, it invokes process_file with the appropriate flag. If incorrect arguments are supplied, it prints a usage message.
 
-Once all threads complete compression, their outputs are merged in the correct order and written to a single output file.
+Thread Safety and Performance Considerations
+Thread safety is crucial in multithreaded programs, especially when accessing shared resources like the console (std::cout). This program ensures synchronized output using a mutex (io_mutex). However, note that the chunks and results vectors are accessed in a thread-safe manner by pre-allocating space before threads are spawned and using unique references (std::ref) to prevent data races.
 
-Multithreading improves the efficiency and performance of file compression by:
+Moreover, since each thread works on a separate segment of data and the algorithm is inherently parallelizable, the program demonstrates good scalability on multi-core systems, significantly improving performance compared to single-threaded approaches.
 
-Reducing total compression time, especially on multi-core systems.
+Use Cases and Limitations
+This tool is ideal for compressing large text or binary files that contain many repeating characters. However, RLE is not optimal for data with high entropy (e.g., already compressed files or random data), as it may not reduce file size effectively.
 
-Improving CPU utilization, as all available cores work simultaneously.
+Error handling is minimal in this implementation. For instance, there are no checks for file read/write failures beyond opening the input file. Additionally, the RLE format used here is simplistic and does not include headers or metadata, making it unsuitable for use in systems requiring robust file format specifications.
 
-Enhancing user experience, particularly for real-time applications.
+Conclusion
+In summary, this C++ program demonstrates the use of multithreading, efficient file I/O, and a basic compression algorithm to implement a simple yet effective file compression/decompression utility. The modular design and clear separation of concerns make the code maintainable and extensible, while the use of modern C++ features reflects practical software engineering principles. It is a strong foundation for further improvements such as more sophisticated compression schemes, error handling, and performance optimizations.
 
-For example, if compressing a 100 MB file takes 10 seconds in a single-threaded program, using 4 threads could potentially reduce it to ~2.5–3 seconds, depending on hardware and implementation efficiency.
-
-Multithreading improves the efficiency and performance of file compression by:
-
-Reducing total compression time, especially on multi-core systems.
-
-Improving CPU utilization, as all available cores work simultaneously.
-
-Enhancing user experience, particularly for real-time applications.
-
-For example, if compressing a 100 MB file takes 10 seconds in a single-threaded program, using 4 threads could potentially reduce it to ~2.5–3 seconds, depending on hardware and implementation efficiency.
+*OUTPUT*:![Image](https://github.com/user-attachments/assets/24b60c3e-3e0b-49c2-b575-e27ff673659f)
 
 
