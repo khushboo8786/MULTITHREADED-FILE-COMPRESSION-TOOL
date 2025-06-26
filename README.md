@@ -8,6 +8,8 @@
 
 *DOMAIN*:C++
 
+*DURATION*:4 WEEKS
+
 *MENTOR*:NEELA SANTHOSH KUMAR
 
 **This C++ program implements a simple and efficient multithreaded file compression and decompression tool based on the Run-Length Encoding (RLE) algorithm. The primary objective of the code is to handle large files by breaking them into manageable chunks, compress or decompress them concurrently using multiple threads, and finally write the processed data to an output file. The design leverages modern C++ features such as the Standard Template Library (STL), threading (<thread>), and synchronization mechanisms (<mutex>), ensuring both scalability and performance.
