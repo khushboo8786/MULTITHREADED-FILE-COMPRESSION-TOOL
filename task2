@@ -1,0 +1,101 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <thread>
+#include <mutex>
+
+std::mutex io_mutex;
+const size_t CHUNK_SIZE = 1024 * 1024; // 1 MB
+
+// Simple Run-Length Encoding
+std::string compress_rle(const std::string& data) {
+    std::string result;
+    for (size_t i = 0; i < data.size(); ) {
+        char current = data[i];
+        size_t count = 1;
+        while (i + count < data.size() && data[i + count] == current && count < 255) {
+            count++;
+        }
+        result += current;
+        result += static_cast<char>(count);
+        i += count;
+    }
+    return result;
+}
+
+// Decompression for RLE
+std::string decompress_rle(const std::string& data) {
+    std::string result;
+    for (size_t i = 0; i < data.size(); i += 2) {
+        char ch = data[i];
+        unsigned char count = static_cast<unsigned char>(data[i + 1]);
+        result.append(count, ch);
+    }
+    return result;
+}
+
+void compress_chunk(const std::string& input, std::string& output, int chunk_id) {
+    output = compress_rle(input);
+    std::lock_guard<std::mutex> lock(io_mutex);
+    std::cout << "Compressed chunk " << chunk_id << "\n";
+}
+
+void decompress_chunk(const std::string& input, std::string& output, int chunk_id) {
+    output = decompress_rle(input);
+    std::lock_guard<std::mutex> lock(io_mutex);
+    std::cout << "Decompressed chunk " << chunk_id << "\n";
+}
+
+void process_file(const std::string& filename, bool compressing) {
+    std::ifstream in(filename, std::ios::binary);
+    if (!in) {
+        std::cerr << "Cannot open file.\n";
+        return;
+    }
+
+    std::vector<std::thread> threads;
+    std::vector<std::string> chunks;
+    std::vector<std::string> results;
+
+    while (!in.eof()) {
+        std::string buffer(CHUNK_SIZE, '\0');
+        in.read(&buffer[0], CHUNK_SIZE);
+        size_t bytes_read = in.gcount();
+        buffer.resize(bytes_read);
+
+        chunks.push_back(buffer);
+        results.emplace_back();
+    }
+
+    for (size_t i = 0; i < chunks.size(); ++i) {
+        if (compressing)
+            threads.emplace_back(compress_chunk, std::ref(chunks[i]), std::ref(results[i]), i);
+        else
+            threads.emplace_back(decompress_chunk, std::ref(chunks[i]), std::ref(results[i]), i);
+    }
+
+    for (auto& t : threads) t.join();
+
+    std::ofstream out(compressing ? "compressed.rle" : "decompressed.txt", std::ios::binary);
+    for (const auto& chunk : results) {
+        out.write(chunk.data(), chunk.size());
+    }
+
+    std::cout << (compressing ? "Compression" : "Decompression") << " complete.\n";
+}
+
+int main(int argc, char* argv[]) {
+    if (argc < 3) {
+        std::cerr << "Usage: tool <compress|decompress> <filename>\n";
+        return 1;
+    }
+
+    std::string mode = argv[1];
+    std::string file = argv[2];
+
+    if (mode == "compress") process_file(file, true);
+    else if (mode == "decompress") process_file(file, false);
+    else std::cerr << "Invalid mode.\n";
+
+    return 0;
+}
